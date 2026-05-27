@@ -1,0 +1,45 @@
+@baseUrl = http://localhost:3000
+
+### Health check
+GET {{baseUrl}}/health
+
+### Get all products
+GET {{baseUrl}}/api/products
+
+### Get product by valid ID
+GET {{baseUrl}}/api/products/1
+
+### Get product by invalid ID
+GET {{baseUrl}}/api/products/999
+
+### Create product
+POST {{baseUrl}}/api/products
+Content-Type: application/json
+
+{
+  "sku": "P003",
+  "name": "Pencil",
+  "price": 5,
+  "stockQty": 300
+}
+
+### Create product with missing field
+POST {{baseUrl}}/api/products
+Content-Type: application/json
+
+{
+  "sku": "P004",
+  "price": 20,
+  "stockQty": 50
+}
+
+### Create product with duplicate SKU
+POST {{baseUrl}}/api/products
+Content-Type: application/json
+
+{
+  "sku": "P001",
+  "name": "Duplicate Notebook",
+  "price": 60,
+  "stockQty": 25
+}
