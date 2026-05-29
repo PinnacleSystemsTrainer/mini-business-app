@@ -1,51 +1,102 @@
 # Mini Business Operations App
 
-A 4-week full-stack internship project using React, Tailwind CSS, Node.js, Express, PostgreSQL, Prisma, GitHub, automated tests, and deployment practices.
+## Project Overview
 
-## Business Goal
+Mini Business Operations App is a training project for a small business workflow. Week 1 establishes the Express backend, React frontend, Tailwind CSS styling, and basic routing foundation.
 
-This application manages a simplified business workflow:
-
-- Product management
-- Customer management
-- Sales order creation
-- Sales order line items
-- Backend total calculation
-- Stock validation
-- Order confirmation
-- Stock movement tracking
-
-## Planned Modules
-
-- Dashboard
-- Products
-- Customers
-- Sales Orders
-- Stock Movements
+Planned modules include product management, customer management, sales order creation, sales order line items, backend total calculation, stock validation, order confirmation, and stock movement tracking.
 
 ## Tech Stack
 
-### Frontend
-
 - React
-- Tailwind CSS
 - React Router
-
-### Backend
-
+- Tailwind CSS
 - Node.js
 - Express.js
-- Prisma ORM
+- PostgreSQL and Prisma ORM planned for Week 2
 
-### Database
+## Project Structure
 
-- PostgreSQL
+```txt
+backend/
+  src/
+    app.js
+    server.js
+    routes/
+      product.routes.js
+    controllers/
+      product.controller.js
+    services/
+      product.service.js
 
-### Engineering Workflow
+frontend/
+  src/
+    api/
+      productApi.js
+    components/
+      layout/
+        AppLayout.jsx
+      ui/
+        Button.jsx
+        Card.jsx
+    pages/
+      DashboardPage.jsx
+      ProductsPage.jsx
+    routes/
+      AppRoutes.jsx
+    App.jsx
+    main.jsx
+```
 
-- Git
-- GitHub
-- Pull requests
-- Automated tests
-- GitHub Actions
-- Hostinger deployment
+## Backend Setup
+
+```bash
+cd backend
+npm install
+```
+
+## Frontend Setup
+
+```bash
+cd frontend
+npm install
+```
+
+## Running the Backend
+
+```bash
+cd backend
+npm run dev
+```
+
+The backend runs on `http://localhost:3000` by default and currently supports:
+
+```txt
+GET /health
+GET /api/products
+GET /api/products/:id
+POST /api/products
+```
+
+## Running the Frontend
+
+```bash
+cd frontend
+npm run dev
+```
+
+The frontend runs on the Vite development server, usually `http://localhost:5173`.
+
+## Tailwind CSS Usage
+
+Tailwind CSS is used for layout, spacing, typography, cards, buttons, tables, and active navigation styles. The app imports Tailwind from `frontend/src/index.css`.
+
+## Week 1 Status
+
+- Express backend created with health and product API routes
+- Product API refactored into route, controller, and service files
+- React frontend created with Dashboard and Products pages
+- React Router configured for `/` and `/products`
+- Shared layout, card, and button components added
+- Tailwind CSS styling applied across the frontend
+- Mock products displayed on the Products page
