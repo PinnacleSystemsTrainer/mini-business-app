@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 import { getProducts } from "../api/productApi";
 import Card from "../components/ui/Card";
-import Button from "../components/ui/Button";
 
 function formatPrice(price) {
   return new Intl.NumberFormat("en-IN", {
@@ -58,7 +58,12 @@ function ProductsPage() {
           </p>
         </div>
 
-        <Button disabled={isLoading}>Add Product</Button>
+        <Link
+          to="/products/new"
+          className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-gray-700"
+        >
+          Add Product
+        </Link>
       </div>
 
       <Card>

@@ -1,15 +1,17 @@
 @baseUrl = http://localhost:3000
+@productId = 1
+@customerId = 1
 
 ### Health check
 GET {{baseUrl}}/health
 
-### Get all products
+### List products
 GET {{baseUrl}}/api/products
 
-### Get product by valid ID
-GET {{baseUrl}}/api/products/1
+### Get product by ID
+GET {{baseUrl}}/api/products/{{productId}}
 
-### Get product by invalid ID
+### Get product with invalid ID
 GET {{baseUrl}}/api/products/999
 
 ### Create product
@@ -23,7 +25,7 @@ Content-Type: application/json
   "stockQty": 300
 }
 
-### Create product with missing field
+### Create product with missing name
 POST {{baseUrl}}/api/products
 Content-Type: application/json
 
@@ -33,13 +35,97 @@ Content-Type: application/json
   "stockQty": 50
 }
 
+### Create product with invalid price
+POST {{baseUrl}}/api/products
+Content-Type: application/json
+
+{
+  "sku": "P005",
+  "name": "Invalid Price Product",
+  "price": 0,
+  "stockQty": 50
+}
+
 ### Create product with duplicate SKU
 POST {{baseUrl}}/api/products
 Content-Type: application/json
 
 {
-  "sku": "P001",
-  "name": "Duplicate Notebook",
-  "price": 60,
+  "sku": "P003",
+  "name": "Duplicate Pencil",
+  "price": 6,
   "stockQty": 25
 }
+
+### Update product
+PATCH {{baseUrl}}/api/products/{{productId}}
+Content-Type: application/json
+
+{
+  "sku": "P003",
+  "name": "Pencil Updated",
+  "price": 7,
+  "stockQty": 250
+}
+
+### Delete product
+DELETE {{baseUrl}}/api/products/{{productId}}
+
+### List customers
+GET {{baseUrl}}/api/customers
+
+### Get customer by ID
+GET {{baseUrl}}/api/customers/{{customerId}}
+
+### Get customer with invalid ID
+GET {{baseUrl}}/api/customers/999
+
+### Create customer
+POST {{baseUrl}}/api/customers
+Content-Type: application/json
+
+{
+  "code": "C001",
+  "name": "ABC Stores",
+  "phone": "9876543210",
+  "email": "accounts@abcstores.com"
+}
+
+### Create customer with duplicate code
+POST {{baseUrl}}/api/customers
+Content-Type: application/json
+
+{
+  "code": "C001",
+  "name": "Duplicate Customer"
+}
+
+### Create customer with missing name
+POST {{baseUrl}}/api/customers
+Content-Type: application/json
+
+{
+  "code": "C002"
+}
+
+### Create customer with missing code
+POST {{baseUrl}}/api/customers
+Content-Type: application/json
+
+{
+  "name": "Missing Code Customer"
+}
+
+### Update customer
+PATCH {{baseUrl}}/api/customers/{{customerId}}
+Content-Type: application/json
+
+{
+  "code": "C001",
+  "name": "ABC Stores Updated",
+  "phone": "9876543210",
+  "email": "admin@abcstores.com"
+}
+
+### Delete customer
+DELETE {{baseUrl}}/api/customers/{{customerId}}

@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const customerRoutes = require("./routes/customer.routes");
 const productRoutes = require("./routes/product.routes");
 
 const app = express();
@@ -11,6 +12,7 @@ app.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
+app.use("/api/customers", customerRoutes);
 app.use("/api/products", productRoutes);
 
 app.use((err, req, res, next) => {
