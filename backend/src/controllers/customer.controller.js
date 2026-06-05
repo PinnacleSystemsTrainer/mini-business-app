@@ -67,7 +67,7 @@ async function deleteCustomer(req, res, next) {
     }
 
     await customerService.deleteCustomer(id);
-    return res.status(204).send();
+    return res.json({ message: 'Customer deactivated successfully' });
   } catch (error) {
     return next(error);
   }

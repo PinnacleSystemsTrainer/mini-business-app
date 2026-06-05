@@ -72,7 +72,7 @@ async function deleteProduct(req, res, next) {
     }
 
     await productService.deleteProduct(id);
-    return res.status(204).send();
+    return res.json({ message: 'Product deactivated successfully' });
   } catch (error) {
     return next(error);
   }
