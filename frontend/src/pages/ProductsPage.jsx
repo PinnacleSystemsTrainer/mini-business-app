@@ -1,52 +1,68 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 
-import { getProducts } from "../api/productApi";
-import Card from "../components/ui/Card";
+import { deleteProduct, getProducts } from '../api/productApi';
+import Card from '../components/ui/Card';
+import EmptyState from '../components/ui/EmptyState';
+import ErrorMessage from '../components/ui/ErrorMessage';
+import LoadingMessage from '../components/ui/LoadingMessage';
 
 function formatPrice(price) {
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 2,
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: 2
   }).format(Number(price));
 }
 
 function ProductsPage() {
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [loadError, setLoadError] = useState('');
+  const [actionError, setActionError] = useState('');
+
+  async function loadProducts() {
+    try {
+      setIsLoading(true);
+      setLoadError('');
+      const data = await getProducts();
+      setProducts(data ?? []);
+    } catch (err) {
+      setLoadError(err.message || 'Failed to load products');
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   useEffect(() => {
-    let isMounted = true;
+    loadProducts();
+  }, []);
 
-    async function loadProducts() {
-      try {
-        setIsLoading(true);
-        setErrorMessage("");
+  async function handleDelete(id) {
+    const confirmed = window.confirm(
+      'Deactivate this product? It will be hidden from active product lists.'
+    );
 
-        const data = await getProducts();
-
-        if (isMounted) {
-          setProducts(data);
-        }
-      } catch (error) {
-        if (isMounted) {
-          setErrorMessage(error.message);
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
+    if (!confirmed) {
+      return;
     }
 
-    loadProducts();
+    try {
+      setActionError('');
+      await deleteProduct(id);
+      await loadProducts();
+    } catch (err) {
+      setActionError(err.message || 'Failed to deactivate product');
+    }
+  }
 
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  if (isLoading) {
+    return <LoadingMessage message="Loading products..." />;
+  }
+
+  if (loadError) {
+    return <ErrorMessage message={loadError} />;
+  }
 
   return (
     <div>
@@ -66,20 +82,15 @@ function ProductsPage() {
         </Link>
       </div>
 
-      <Card>
-        {isLoading ? (
-          <div className="py-8 text-center text-sm text-gray-500">
-            Loading products...
-          </div>
-        ) : errorMessage ? (
-          <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {errorMessage}
-          </div>
-        ) : products.length === 0 ? (
-          <div className="py-8 text-center text-sm text-gray-500">
-            No active products found.
-          </div>
-        ) : (
+      {actionError ? <ErrorMessage message={actionError} /> : null}
+
+      {products.length === 0 ? (
+        <EmptyState
+          title="No active products found"
+          description="Create your first product to get started."
+        />
+      ) : (
+        <Card>
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-left text-sm">
               <thead>
@@ -88,31 +99,46 @@ function ProductsPage() {
                   <th className="px-3 py-2 font-medium">Name</th>
                   <th className="px-3 py-2 font-medium">Price</th>
                   <th className="px-3 py-2 font-medium">Stock</th>
+                  <th className="px-3 py-2 font-medium">Actions</th>
                 </tr>
               </thead>
-
               <tbody>
                 {products.map((product) => (
                   <tr key={product.id} className="border-b last:border-0">
                     <td className="px-3 py-2 font-medium text-gray-900">
                       {product.sku}
                     </td>
-                    <td className="px-3 py-2 text-gray-700">
-                      {product.name}
-                    </td>
+                    <td className="px-3 py-2 text-gray-700">{product.name}</td>
                     <td className="px-3 py-2 text-gray-700">
                       {formatPrice(product.price)}
                     </td>
                     <td className="px-3 py-2 text-gray-700">
                       {product.stockQty}
                     </td>
+                    <td className="px-3 py-2">
+                      <div className="flex items-center gap-3">
+                        <Link
+                          to={`/products/${product.id}/edit`}
+                          className="text-sm font-medium text-gray-700 hover:text-gray-900"
+                        >
+                          Edit
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(product.id)}
+                          className="text-sm font-medium text-red-600 hover:text-red-700"
+                        >
+                          Deactivate
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        )}
-      </Card>
+        </Card>
+      )}
     </div>
   );
 }

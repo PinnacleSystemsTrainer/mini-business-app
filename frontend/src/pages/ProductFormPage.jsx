@@ -1,33 +1,35 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 
-import { createProduct } from "../api/productApi";
-import Card from "../components/ui/Card";
+import { createProduct, getProductById, updateProduct } from '../api/productApi';
+import Card from '../components/ui/Card';
+import ErrorMessage from '../components/ui/ErrorMessage';
+import LoadingMessage from '../components/ui/LoadingMessage';
 
-const initialForm = {
-  sku: "",
-  name: "",
-  price: "",
-  stockQty: "",
+const emptyForm = {
+  sku: '',
+  name: '',
+  price: '',
+  stockQty: ''
 };
 
 function validateProductForm(form) {
   const errors = {};
 
   if (!form.sku.trim()) {
-    errors.sku = "SKU is required";
+    errors.sku = 'SKU is required';
   }
 
   if (!form.name.trim()) {
-    errors.name = "Name is required";
+    errors.name = 'Name is required';
   }
 
   if (Number(form.price) <= 0) {
-    errors.price = "Price must be greater than zero";
+    errors.price = 'Price must be greater than zero';
   }
 
   if (Number(form.stockQty) < 0) {
-    errors.stockQty = "Opening stock cannot be negative";
+    errors.stockQty = 'Opening stock cannot be negative';
   }
 
   return errors;
@@ -35,23 +37,47 @@ function validateProductForm(form) {
 
 function ProductFormPage() {
   const navigate = useNavigate();
-  const [form, setForm] = useState(initialForm);
+  const { id } = useParams();
+  const isEditMode = Boolean(id);
+
+  const [form, setForm] = useState(emptyForm);
   const [fieldErrors, setFieldErrors] = useState({});
-  const [submitError, setSubmitError] = useState("");
+  const [submitError, setSubmitError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(isEditMode);
+  const [loadError, setLoadError] = useState('');
+
+  useEffect(() => {
+    if (!isEditMode) return;
+
+    async function loadProduct() {
+      try {
+        setLoading(true);
+        const product = await getProductById(id);
+        setForm({
+          sku: product.sku,
+          name: product.name,
+          price: String(product.price),
+          stockQty: String(product.stockQty)
+        });
+      } catch (err) {
+        setLoadError(err.message || 'Failed to load product');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadProduct();
+  }, [id, isEditMode]);
 
   function handleChange(event) {
     const { name, value } = event.target;
-
-    setForm((previousForm) => ({
-      ...previousForm,
-      [name]: value,
-    }));
+    setForm((prev) => ({ ...prev, [name]: value }));
   }
 
   async function handleSubmit(event) {
     event.preventDefault();
-    setSubmitError("");
+    setSubmitError('');
 
     const errors = validateProductForm(form);
     setFieldErrors(errors);
@@ -64,27 +90,45 @@ function ProductFormPage() {
       sku: form.sku.trim(),
       name: form.name.trim(),
       price: Number(form.price),
-      stockQty: Number(form.stockQty),
+      stockQty: Number(form.stockQty)
     };
 
     try {
       setSaving(true);
-      await createProduct(payload);
-      navigate("/products");
+      if (isEditMode) {
+        await updateProduct(Number(id), payload);
+      } else {
+        await createProduct(payload);
+      }
+      navigate('/products');
     } catch (error) {
-      setSubmitError(error.message || "Failed to create product");
+      setSubmitError(
+        error.message || `Failed to ${isEditMode ? 'update' : 'create'} product`
+      );
     } finally {
       setSaving(false);
     }
+  }
+
+  if (loading) {
+    return <LoadingMessage message="Loading product..." />;
+  }
+
+  if (loadError) {
+    return <ErrorMessage message={loadError} />;
   }
 
   return (
     <div>
       <div className="mb-4 flex items-center justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">Add Product</h2>
+          <h2 className="text-lg font-semibold text-gray-900">
+            {isEditMode ? 'Edit Product' : 'Add Product'}
+          </h2>
           <p className="text-sm text-gray-500">
-            Create a new product master record.
+            {isEditMode
+              ? 'Update product master record.'
+              : 'Create a new product master record.'}
           </p>
         </div>
 
@@ -98,11 +142,7 @@ function ProductFormPage() {
 
       <Card>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {submitError ? (
-            <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {submitError}
-            </div>
-          ) : null}
+          {submitError ? <ErrorMessage message={submitError} /> : null}
 
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">
@@ -152,9 +192,7 @@ function ProductFormPage() {
                 placeholder="Example: 50"
               />
               {fieldErrors.price ? (
-                <p className="mt-1 text-sm text-red-600">
-                  {fieldErrors.price}
-                </p>
+                <p className="mt-1 text-sm text-red-600">{fieldErrors.price}</p>
               ) : null}
             </div>
 
@@ -192,7 +230,7 @@ function ProductFormPage() {
               disabled={saving}
               className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {saving ? "Saving..." : "Save Product"}
+              {saving ? 'Saving...' : isEditMode ? 'Update Product' : 'Save Product'}
             </button>
           </div>
         </form>
