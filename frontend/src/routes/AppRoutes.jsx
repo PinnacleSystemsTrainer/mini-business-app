@@ -6,6 +6,7 @@ import ProductFormPage from '../pages/ProductFormPage';
 import CustomersPage from '../pages/CustomersPage';
 import CustomerFormPage from '../pages/CustomerFormPage';
 import SalesOrdersPage from '../pages/SalesOrdersPage';
+import SalesOrderCreatePage from '../pages/SalesOrderCreatePage';
 
 function AppRoutes() {
   return (
@@ -21,6 +22,7 @@ function AppRoutes() {
       <Route path="/customers/:id/edit" element={<CustomerFormPage />} />
 
       <Route path="/sales-orders" element={<SalesOrdersPage />} />
+      <Route path="/sales-orders/new" element={<SalesOrderCreatePage />} />
     </Routes>
   );
 }

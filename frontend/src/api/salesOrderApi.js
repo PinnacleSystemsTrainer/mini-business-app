@@ -20,3 +20,12 @@ export async function getSalesOrderById(id) {
   const response = await fetch(`${API_BASE_URL}/sales-orders/${id}`);
   return handleResponse(response);
 }
+
+export async function createSalesOrder(data) {
+  const response = await fetch(`${API_BASE_URL}/sales-orders`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  return handleResponse(response);
+}

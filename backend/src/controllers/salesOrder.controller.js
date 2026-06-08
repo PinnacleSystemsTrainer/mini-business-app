@@ -30,6 +30,15 @@ async function listSalesOrders(req, res, next) {
   }
 }
 
+async function createSalesOrder(req, res, next) {
+  try {
+    const salesOrder = await salesOrderService.createSalesOrder(req.body);
+    return res.status(201).json(salesOrder);
+  } catch (error) {
+    return next(error);
+  }
+}
+
 async function getSalesOrder(req, res, next) {
   try {
     const id = parseSalesOrderId(req.params.id);
@@ -51,6 +60,7 @@ async function getSalesOrder(req, res, next) {
 }
 
 module.exports = {
+  createSalesOrder,
   listSalesOrders,
   getSalesOrder,
 };

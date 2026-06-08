@@ -67,13 +67,15 @@ function SalesOrdersPage() {
           </p>
         </div>
 
-        <Button disabled>New Sales Order</Button>
+        <Link to="/sales-orders/new">
+          <Button>New Sales Order</Button>
+        </Link>
       </div>
 
       {orders.length === 0 ? (
         <EmptyState
           title="No sales orders yet"
-          description="Sales order creation will be added next. For today, this page is ready to display orders when they exist."
+          description="Create a new sales order using the button above."
         />
       ) : (
         <Card>
