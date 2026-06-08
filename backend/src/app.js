@@ -3,6 +3,7 @@ const cors = require('cors');
 
 const productRoutes = require('./routes/product.routes');
 const customerRoutes = require('./routes/customer.routes');
+const salesOrderRoutes = require('./routes/salesOrder.routes');
 const notFound = require('./middleware/notFound');
 const errorHandler = require('./middleware/errorHandler');
 
@@ -17,6 +18,7 @@ app.get('/health', (req, res) => {
 
 app.use('/api/products', productRoutes);
 app.use('/api/customers', customerRoutes);
+app.use('/api/sales-orders', salesOrderRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
