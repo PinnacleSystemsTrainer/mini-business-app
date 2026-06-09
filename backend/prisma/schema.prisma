@@ -18,6 +18,7 @@ model Product {
   updatedAt DateTime @updatedAt
 
   salesOrderItems SalesOrderItem[]
+  stockMovements  StockMovement[]
 }
 
 model Customer {
@@ -56,4 +57,16 @@ model SalesOrderItem {
 
   salesOrder SalesOrder @relation(fields: [salesOrderId], references: [id])
   product    Product    @relation(fields: [productId], references: [id])
+}
+
+model StockMovement {
+  id            Int      @id @default(autoincrement())
+  productId     Int
+  movementType  String
+  quantity      Int
+  referenceType String?
+  referenceId   Int?
+  createdAt     DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id])
 }

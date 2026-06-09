@@ -29,3 +29,10 @@ export async function createSalesOrder(data) {
   });
   return handleResponse(response);
 }
+
+export async function confirmSalesOrder(id) {
+  const response = await fetch(`${API_BASE_URL}/sales-orders/${id}/confirm`, {
+    method: "POST",
+  });
+  return handleResponse(response);
+}

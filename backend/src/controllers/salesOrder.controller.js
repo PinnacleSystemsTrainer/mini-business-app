@@ -59,8 +59,24 @@ async function getSalesOrder(req, res, next) {
   }
 }
 
+async function confirmSalesOrder(req, res, next) {
+  try {
+    const id = parseSalesOrderId(req.params.id);
+
+    if (!id) {
+      return res.status(400).json({ message: "Invalid sales order id" });
+    }
+
+    const order = await salesOrderService.confirmSalesOrder(id);
+    return res.json(order);
+  } catch (error) {
+    return next(error);
+  }
+}
+
 module.exports = {
   createSalesOrder,
   listSalesOrders,
   getSalesOrder,
+  confirmSalesOrder,
 };

@@ -166,8 +166,139 @@ async function getSalesOrderById(id) {
   });
 }
 
+async function confirmSalesOrder(id) {
+  const orderId = Number(id);
+
+  return prisma.$transaction(async (tx) => {
+    const order = await tx.salesOrder.findUnique({
+      where: {
+        id: orderId,
+      },
+      include: {
+        customer: true,
+        items: {
+          include: {
+            product: true,
+          },
+          orderBy: {
+            id: "asc",
+          },
+        },
+      },
+    });
+
+    if (!order) {
+      const error = new Error("Sales order not found");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    if (order.status !== "DRAFT") {
+      const error = new Error("Only draft orders can be confirmed");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (!order.items || order.items.length === 0) {
+      const error = new Error("Cannot confirm an order without items");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    for (const item of order.items) {
+      if (item.quantity <= 0) {
+        const error = new Error("Order item quantity must be greater than zero");
+        error.statusCode = 400;
+        throw error;
+      }
+
+      if (!item.product) {
+        const error = new Error("Order item product not found");
+        error.statusCode = 400;
+        throw error;
+      }
+
+      if (item.product.stockQty < item.quantity) {
+        const error = new Error(
+          `Insufficient stock for product ${item.product.name}`
+        );
+        error.statusCode = 400;
+        throw error;
+      }
+    }
+
+    const statusUpdate = await tx.salesOrder.updateMany({
+      where: {
+        id: order.id,
+        status: "DRAFT",
+      },
+      data: {
+        status: "CONFIRMED",
+      },
+    });
+
+    if (statusUpdate.count !== 1) {
+      const error = new Error("Only draft orders can be confirmed");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    for (const item of order.items) {
+      const productUpdate = await tx.product.updateMany({
+        where: {
+          id: item.productId,
+          stockQty: {
+            gte: item.quantity,
+          },
+        },
+        data: {
+          stockQty: {
+            decrement: item.quantity,
+          },
+        },
+      });
+
+      if (productUpdate.count !== 1) {
+        const error = new Error(
+          `Insufficient stock for product ${item.product.name}`
+        );
+        error.statusCode = 400;
+        throw error;
+      }
+
+      await tx.stockMovement.create({
+        data: {
+          productId: item.productId,
+          movementType: "OUT",
+          quantity: item.quantity,
+          referenceType: "SALES_ORDER",
+          referenceId: order.id,
+        },
+      });
+    }
+
+    return tx.salesOrder.findUnique({
+      where: {
+        id: order.id,
+      },
+      include: {
+        customer: true,
+        items: {
+          include: {
+            product: true,
+          },
+          orderBy: {
+            id: "asc",
+          },
+        },
+      },
+    });
+  });
+}
+
 module.exports = {
   createSalesOrder,
   getSalesOrders,
   getSalesOrderById,
+  confirmSalesOrder,
 };
