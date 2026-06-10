@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p /home/ajay/workspace/training/ajay/mini-business-app/backend/src/middleware)",
+      "Bash(npm test *)"
+    ],
+    "additionalDirectories": [
+      "/home/ajay/workspace/training/ajay/mini-business-app/backend/src"
+    ]
+  }
+}

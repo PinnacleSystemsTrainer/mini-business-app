@@ -5,7 +5,9 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "nodemon src/server.js"
+    "dev": "nodemon src/server.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "keywords": [],
   "author": "",
@@ -21,6 +23,7 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.14",
-    "prisma": "^7.8.0"
+    "prisma": "^7.8.0",
+    "vitest": "^4.1.8"
   }
 }
