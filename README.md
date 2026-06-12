@@ -197,3 +197,58 @@ Tailwind CSS is used for layout, spacing, typography, cards, buttons, tables, an
 - Reusable Prisma client file added
 - Safe `.env.example` placeholder added
 - Prisma setup documented
+
+## Running Tests
+
+### Backend unit tests
+
+```bash
+cd backend
+npm test
+```
+
+Unit tests cover the sales order service: order creation, order read functions, stock validation, and confirmation logic. These tests use mocked Prisma and do not require a database connection.
+
+### Backend API/integration tests
+
+```bash
+cd backend
+npm test
+```
+
+Integration tests are in `backend/tests/integration/` and run as part of the same `npm test` command via Vitest. These tests call real Express endpoints against the local database and cover:
+
+- Health endpoint
+- Product creation
+- Customer creation
+- Draft sales order creation
+- Sales order confirmation
+- Stock reduction after confirmation
+- Stock movement record creation
+- Double confirmation rejection
+- Insufficient stock rejection
+- Order without items rejection
+
+A running PostgreSQL database and a valid `backend/.env` with `DATABASE_URL` are required.
+
+## Manual UI Test Scenario
+
+### Sales order confirmation flow
+
+1. Start the backend: `cd backend && npm run dev`
+2. Start the frontend: `cd frontend && npm run dev`
+3. Open the app in a browser.
+4. Go to **Products** and create a product with a known stock quantity (e.g. 10 units).
+5. Go to **Customers** and create a customer.
+6. Go to **Sales Orders** and click **New Order**.
+7. Select the customer and add a line item for the product with quantity 2.
+8. Submit the form. Confirm the order appears in the list with status **DRAFT**.
+9. Click the order to open the detail page.
+10. Click **Confirm Order**. Verify the status changes to **CONFIRMED** and the confirm button disappears.
+11. Go back to the product on the Products page. Verify stock has reduced by 2 (e.g. 10 → 8).
+12. Return to the order detail page and attempt to confirm again. Verify the confirm button is no longer shown.
+
+**Expected results:**
+- Order status changes from DRAFT to CONFIRMED after step 10.
+- Product stock reduces correctly after confirmation.
+- A confirmed order cannot be confirmed a second time.
