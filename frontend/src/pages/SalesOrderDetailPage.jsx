@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
+import { getStoredUser } from "../api/authApi";
 import {
   confirmSalesOrder,
   getSalesOrderById,
@@ -28,6 +29,8 @@ function formatDate(value) {
 
 function SalesOrderDetailPage() {
   const { id } = useParams();
+  const user = getStoredUser();
+  const isAdmin = user?.role === "ADMIN";
 
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -82,7 +85,7 @@ function SalesOrderDetailPage() {
     return <ErrorMessage message="Sales order not found" />;
   }
 
-  const isDraft = order.status === "DRAFT";
+  const canConfirm = isAdmin && order.status === "DRAFT";
 
   return (
     <div className="space-y-4">
@@ -102,7 +105,7 @@ function SalesOrderDetailPage() {
           </p>
         </div>
 
-        {isDraft ? (
+        {canConfirm ? (
           <Button onClick={handleConfirm} disabled={confirming}>
             {confirming ? "Confirming..." : "Confirm Order"}
           </Button>

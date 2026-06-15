@@ -1,8 +1,59 @@
+process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-secret';
+
+const jwt = require('jsonwebtoken');
 const request = require('supertest');
 const app = require('../../src/app');
 const prisma = require('../../src/lib/prisma');
 
+const runId = Date.now();
+let adminToken;
+let salesToken;
+
+function createToken(user) {
+  return jwt.sign(
+    {
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: '1h',
+    }
+  );
+}
+
+beforeAll(async () => {
+  const admin = await prisma.user.create({
+    data: {
+      name: 'Test Admin',
+      email: `test-admin-${runId}@example.com`,
+      passwordHash: 'not-used-in-api-tests',
+      role: 'ADMIN',
+    },
+  });
+
+  const salesUser = await prisma.user.create({
+    data: {
+      name: 'Test Sales User',
+      email: `test-sales-${runId}@example.com`,
+      passwordHash: 'not-used-in-api-tests',
+      role: 'SALES_USER',
+    },
+  });
+
+  adminToken = createToken(admin);
+  salesToken = createToken(salesUser);
+});
+
 afterAll(async () => {
+  await prisma.user.deleteMany({
+    where: {
+      email: {
+        in: [`test-admin-${runId}@example.com`, `test-sales-${runId}@example.com`],
+      },
+    },
+  });
   await prisma.$disconnect();
 });
 
@@ -12,6 +63,29 @@ describe('Backend API smoke tests', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.status).toBe('ok');
+  });
+});
+
+describe('API authorization', () => {
+  test('rejects missing token on protected routes', async () => {
+    const response = await request(app).get('/api/products');
+
+    expect(response.status).toBe(401);
+    expect(response.body.message).toMatch(/authentication required/i);
+  });
+
+  test('blocks SALES_USER from creating products', async () => {
+    const response = await request(app)
+      .post('/api/products')
+      .set('Authorization', `Bearer ${salesToken}`)
+      .send({
+        sku: `TEST-FORBIDDEN-${runId}`,
+        name: 'Forbidden Product',
+        price: 50,
+        stockQty: 10,
+      });
+
+    expect(response.status).toBe(403);
   });
 });
 
@@ -38,6 +112,7 @@ describe('Sales order API flow', () => {
   test('creates a product', async () => {
     const response = await request(app)
       .post('/api/products')
+      .set('Authorization', `Bearer ${adminToken}`)
       .send({
         sku: `TEST-PROD-${unique}`,
         name: 'Test Notebook',
@@ -54,6 +129,7 @@ describe('Sales order API flow', () => {
   test('creates a customer', async () => {
     const response = await request(app)
       .post('/api/customers')
+      .set('Authorization', `Bearer ${adminToken}`)
       .send({
         code: `TEST-CUST-${unique}`,
         name: 'Test Customer',
@@ -70,6 +146,7 @@ describe('Sales order API flow', () => {
   test('creates a draft sales order', async () => {
     const response = await request(app)
       .post('/api/sales-orders')
+      .set('Authorization', `Bearer ${salesToken}`)
       .send({
         customerId: customer.id,
         items: [
@@ -91,6 +168,7 @@ describe('Sales order API flow', () => {
   test('confirms the sales order', async () => {
     const response = await request(app)
       .post(`/api/sales-orders/${salesOrder.id}/confirm`)
+      .set('Authorization', `Bearer ${adminToken}`)
       .send();
 
     expect(response.status).toBe(200);
@@ -118,6 +196,7 @@ describe('Sales order API flow', () => {
   test('blocks double confirmation', async () => {
     const response = await request(app)
       .post(`/api/sales-orders/${salesOrder.id}/confirm`)
+      .set('Authorization', `Bearer ${adminToken}`)
       .send();
 
     expect(response.status).toBe(400);
@@ -132,6 +211,7 @@ describe('Sales order failure cases', () => {
   beforeAll(async () => {
     const productRes = await request(app)
       .post('/api/products')
+      .set('Authorization', `Bearer ${adminToken}`)
       .send({
         sku: `TEST-LOW-${unique}`,
         name: 'Low Stock Item',
@@ -142,6 +222,7 @@ describe('Sales order failure cases', () => {
 
     const customerRes = await request(app)
       .post('/api/customers')
+      .set('Authorization', `Bearer ${adminToken}`)
       .send({
         code: `TEST-FAIL-${unique}`,
         name: 'Fail Test Customer',
@@ -163,6 +244,7 @@ describe('Sales order failure cases', () => {
   test('rejects order creation without items', async () => {
     const response = await request(app)
       .post('/api/sales-orders')
+      .set('Authorization', `Bearer ${salesToken}`)
       .send({ customerId: customer.id, items: [] });
 
     expect(response.status).toBe(400);
@@ -172,6 +254,7 @@ describe('Sales order failure cases', () => {
   test('rejects confirmation when stock is insufficient', async () => {
     const orderRes = await request(app)
       .post('/api/sales-orders')
+      .set('Authorization', `Bearer ${salesToken}`)
       .send({
         customerId: customer.id,
         items: [{ productId: lowStockProduct.id, quantity: 5, rate: 20 }],
@@ -180,6 +263,7 @@ describe('Sales order failure cases', () => {
 
     const confirmRes = await request(app)
       .post(`/api/sales-orders/${orderRes.body.id}/confirm`)
+      .set('Authorization', `Bearer ${adminToken}`)
       .send();
 
     expect(confirmRes.status).toBe(400);

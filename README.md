@@ -4,7 +4,7 @@
 
 Mini Business Operations App is a training project for a small business workflow. It includes an Express backend, React frontend, Tailwind CSS styling, PostgreSQL persistence through Prisma, and a sales order workflow.
 
-Current modules include product management, customer management, sales order creation, sales order line items, backend total calculation, stock validation, order confirmation, stock reduction, and stock movement tracking.
+Current modules include authentication, role-based authorization, product management, customer management, sales order creation, sales order line items, backend total calculation, stock validation, order confirmation, stock reduction, and stock movement tracking.
 
 ## Tech Stack
 
@@ -29,29 +29,40 @@ backend/
     lib/
       prisma.js
     routes/
+      auth.routes.js
       product.routes.js
       customer.routes.js
       salesOrder.routes.js
     controllers/
+      auth.controller.js
       product.controller.js
       customer.controller.js
       salesOrder.controller.js
     services/
+      auth.service.js
       product.service.js
       customer.service.js
       salesOrder.service.js
+    middleware/
+      auth.js
+      requireRole.js
     utils/
       appError.js
       salesOrderCalculations.js
+  scripts/
+    create-admin.js
 
 frontend/
   src/
     api/
+      authApi.js
       httpClient.js
       productApi.js
       customerApi.js
       salesOrderApi.js
     components/
+      auth/
+        ProtectedRoute.jsx
       layout/
         AppLayout.jsx
       ui/
@@ -63,6 +74,7 @@ frontend/
     pages/
       CustomersPage.jsx
       DashboardPage.jsx
+      LoginPage.jsx
       SalesOrderCreatePage.jsx
       SalesOrderDetailPage.jsx
       SalesOrdersPage.jsx
@@ -98,6 +110,8 @@ The backend runs on `http://localhost:3000` by default and currently supports:
 
 ```txt
 GET /health
+POST /api/auth/register
+POST /api/auth/login
 GET /api/products
 GET /api/products/:id
 POST /api/products
@@ -113,6 +127,8 @@ GET /api/sales-orders/:id
 POST /api/sales-orders
 POST /api/sales-orders/:id/confirm
 ```
+
+All product, customer, and sales order endpoints require authentication. Product and customer write operations require the `ADMIN` role. Sales order creation allows `ADMIN` and `SALES_USER`; order confirmation requires `ADMIN`.
 
 ## Running the Frontend
 
@@ -186,13 +202,27 @@ Local setup:
 
 1. Create PostgreSQL database `mini_business_app`.
 2. Copy `backend/.env.example` to `backend/.env`.
-3. Set the correct local `DATABASE_URL` in `backend/.env`.
+3. Set the correct local `DATABASE_URL` and a long `JWT_SECRET` in `backend/.env`.
 4. Run:
 
 ```powershell
 cd backend
-npx prisma migrate dev --name init_product
+npx prisma migrate dev
 npx prisma generate
+```
+
+Create the first admin user:
+
+```bash
+cd backend
+npm run create-admin
+```
+
+The training seed creates:
+
+```txt
+Email: admin@example.com
+Password: admin123
 ```
 
 Do not commit real database passwords.
@@ -232,6 +262,8 @@ Tailwind CSS is used for layout, spacing, typography, cards, buttons, tables, an
 ## Current Project Status
 
 - Product and customer master data flows are implemented.
+- Login uses JWT-based authentication.
+- `ADMIN` and `SALES_USER` roles protect backend routes.
 - Sales orders can be created with customer and line item details.
 - Backend services validate inputs and calculate line totals and order totals.
 - Draft sales orders can be confirmed.
@@ -246,7 +278,7 @@ Tailwind CSS is used for layout, spacing, typography, cards, buttons, tables, an
 
 ```bash
 cd backend
-npm test
+npm run test:unit
 ```
 
 Unit tests cover the sales order service: order creation, order read functions, stock validation, and confirmation logic. These tests use mocked Prisma and do not require a database connection.
@@ -255,12 +287,14 @@ Unit tests cover the sales order service: order creation, order read functions, 
 
 ```bash
 cd backend
-npm test
+npm run test:integration
 ```
 
 Integration tests are in `backend/tests/integration/` and run as part of the same `npm test` command via Vitest. These tests call real Express endpoints against the local database and cover:
 
 - Health endpoint
+- Missing token rejection
+- Role-based authorization rejection
 - Product creation
 - Customer creation
 - Draft sales order creation
@@ -279,7 +313,7 @@ A running PostgreSQL database and a valid `backend/.env` with `DATABASE_URL` are
 
 1. Start the backend: `cd backend && npm run dev`
 2. Start the frontend: `cd frontend && npm run dev`
-3. Open the app in a browser.
+3. Log in as `admin@example.com` using password `admin123`.
 4. Go to **Products** and create a product with a known stock quantity (e.g. 10 units).
 5. Go to **Customers** and create a customer.
 6. Go to **Sales Orders** and click **New Order**.
@@ -287,7 +321,7 @@ A running PostgreSQL database and a valid `backend/.env` with `DATABASE_URL` are
 8. Submit the form. Confirm the order appears in the list with status **DRAFT**.
 9. Click the order to open the detail page.
 10. Click **Confirm Order**. Verify the status changes to **CONFIRMED** and the confirm button disappears.
-11. Go back to the product on the Products page. Verify stock has reduced by 2 (e.g. 10 → 8).
+11. Go back to the product on the Products page. Verify stock has reduced by 2 (e.g. 10 -> 8).
 12. Return to the order detail page and attempt to confirm again. Verify the confirm button is no longer shown.
 
 **Expected results:**

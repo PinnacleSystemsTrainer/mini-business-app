@@ -38,6 +38,18 @@ function renderProductsPage() {
 }
 
 describe('ProductsPage', () => {
+  beforeEach(() => {
+    localStorage.setItem(
+      'user',
+      JSON.stringify({
+        id: 1,
+        name: 'Test Admin',
+        email: 'admin@example.com',
+        role: 'ADMIN',
+      })
+    );
+  });
+
   it('shows the products page heading and helper text', async () => {
     renderProductsPage();
 

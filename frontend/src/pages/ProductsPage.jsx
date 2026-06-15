@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
+import { getStoredUser } from '../api/authApi';
 import { deleteProduct, getProducts } from '../api/productApi';
 import Card from '../components/ui/Card';
 import EmptyState from '../components/ui/EmptyState';
@@ -16,6 +17,9 @@ function formatPrice(price) {
 }
 
 function ProductsPage() {
+  const user = getStoredUser();
+  const isAdmin = user?.role === 'ADMIN';
+
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -74,12 +78,14 @@ function ProductsPage() {
           </p>
         </div>
 
-        <Link
-          to="/products/new"
-          className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-gray-700"
-        >
-          Add Product
-        </Link>
+        {isAdmin ? (
+          <Link
+            to="/products/new"
+            className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-gray-700"
+          >
+            Add Product
+          </Link>
+        ) : null}
       </div>
 
       {actionError ? <ErrorMessage message={actionError} /> : null}
@@ -99,7 +105,9 @@ function ProductsPage() {
                   <th className="px-3 py-2 font-medium">Name</th>
                   <th className="px-3 py-2 font-medium">Price</th>
                   <th className="px-3 py-2 font-medium">Stock</th>
-                  <th className="px-3 py-2 font-medium">Actions</th>
+                  {isAdmin ? (
+                    <th className="px-3 py-2 font-medium">Actions</th>
+                  ) : null}
                 </tr>
               </thead>
               <tbody>
@@ -115,23 +123,25 @@ function ProductsPage() {
                     <td className="px-3 py-2 text-gray-700">
                       {product.stockQty}
                     </td>
-                    <td className="px-3 py-2">
-                      <div className="flex items-center gap-3">
-                        <Link
-                          to={`/products/${product.id}/edit`}
-                          className="text-sm font-medium text-gray-700 hover:text-gray-900"
-                        >
-                          Edit
-                        </Link>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(product.id)}
-                          className="text-sm font-medium text-red-600 hover:text-red-700"
-                        >
-                          Deactivate
-                        </button>
-                      </div>
-                    </td>
+                    {isAdmin ? (
+                      <td className="px-3 py-2">
+                        <div className="flex items-center gap-3">
+                          <Link
+                            to={`/products/${product.id}/edit`}
+                            className="text-sm font-medium text-gray-700 hover:text-gray-900"
+                          >
+                            Edit
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(product.id)}
+                            className="text-sm font-medium text-red-600 hover:text-red-700"
+                          >
+                            Deactivate
+                          </button>
+                        </div>
+                      </td>
+                    ) : null}
                   </tr>
                 ))}
               </tbody>
