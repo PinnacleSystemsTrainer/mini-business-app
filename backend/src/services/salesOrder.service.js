@@ -1,45 +1,44 @@
 const prisma = require("../lib/prisma");
+const { createAppError } = require("../utils/appError");
+const {
+  calculateLineTotal,
+  calculateOrderTotal,
+} = require("../utils/salesOrderCalculations");
 
-function calculateLineTotal(quantity, rate) {
-  return Number(quantity) * Number(rate);
+function validateOrderHasCustomer(data) {
+  if (!data.customerId) {
+    throw createAppError("Customer is required");
+  }
+}
+
+function validateOrderHasItems(data) {
+  if (!Array.isArray(data.items) || data.items.length === 0) {
+    throw createAppError("Order must have at least one item");
+  }
+}
+
+function validateOrderItem(item, index) {
+  const itemNumber = index + 1;
+
+  if (!item.productId) {
+    throw createAppError(`Product is required for item ${itemNumber}`);
+  }
+
+  if (Number(item.quantity) <= 0) {
+    throw createAppError(
+      `Quantity must be greater than zero for item ${itemNumber}`
+    );
+  }
+
+  if (Number(item.rate) <= 0) {
+    throw createAppError(`Rate must be greater than zero for item ${itemNumber}`);
+  }
 }
 
 function validateOrderInput(data) {
-  if (!data.customerId) {
-    const error = new Error("Customer is required");
-    error.statusCode = 400;
-    throw error;
-  }
-
-  if (!Array.isArray(data.items) || data.items.length === 0) {
-    const error = new Error("Order must have at least one item");
-    error.statusCode = 400;
-    throw error;
-  }
-
-  data.items.forEach((item, index) => {
-    if (!item.productId) {
-      const error = new Error(`Product is required for item ${index + 1}`);
-      error.statusCode = 400;
-      throw error;
-    }
-
-    if (Number(item.quantity) <= 0) {
-      const error = new Error(
-        `Quantity must be greater than zero for item ${index + 1}`
-      );
-      error.statusCode = 400;
-      throw error;
-    }
-
-    if (Number(item.rate) <= 0) {
-      const error = new Error(
-        `Rate must be greater than zero for item ${index + 1}`
-      );
-      error.statusCode = 400;
-      throw error;
-    }
-  });
+  validateOrderHasCustomer(data);
+  validateOrderHasItems(data);
+  data.items.forEach(validateOrderItem);
 }
 
 async function generateOrderNo() {
@@ -55,9 +54,7 @@ async function createSalesOrder(data) {
   });
 
   if (!customer) {
-    const error = new Error("Customer not found");
-    error.statusCode = 400;
-    throw error;
+    throw createAppError("Customer not found");
   }
 
   const productIds = data.items.map((item) => Number(item.productId));
@@ -67,9 +64,7 @@ async function createSalesOrder(data) {
   });
 
   if (products.length !== productIds.length) {
-    const error = new Error("One or more products are invalid");
-    error.statusCode = 400;
-    throw error;
+    throw createAppError("One or more products are invalid");
   }
 
   const orderItems = data.items.map((item) => {
@@ -83,10 +78,7 @@ async function createSalesOrder(data) {
     };
   });
 
-  const totalAmount = orderItems.reduce(
-    (sum, item) => sum + Number(item.lineTotal),
-    0
-  );
+  const totalAmount = calculateOrderTotal(data.items);
 
   const orderNo = await generateOrderNo();
 
@@ -188,42 +180,28 @@ async function confirmSalesOrder(id) {
     });
 
     if (!order) {
-      const error = new Error("Sales order not found");
-      error.statusCode = 404;
-      throw error;
+      throw createAppError("Sales order not found", 404);
     }
 
     if (order.status !== "DRAFT") {
-      const error = new Error("Only draft orders can be confirmed");
-      error.statusCode = 400;
-      throw error;
+      throw createAppError("Only draft orders can be confirmed");
     }
 
     if (!order.items || order.items.length === 0) {
-      const error = new Error("Cannot confirm an order without items");
-      error.statusCode = 400;
-      throw error;
+      throw createAppError("Cannot confirm an order without items");
     }
 
     for (const item of order.items) {
       if (item.quantity <= 0) {
-        const error = new Error("Order item quantity must be greater than zero");
-        error.statusCode = 400;
-        throw error;
+        throw createAppError("Order item quantity must be greater than zero");
       }
 
       if (!item.product) {
-        const error = new Error("Order item product not found");
-        error.statusCode = 400;
-        throw error;
+        throw createAppError("Order item product not found");
       }
 
       if (item.product.stockQty < item.quantity) {
-        const error = new Error(
-          `Insufficient stock for product ${item.product.name}`
-        );
-        error.statusCode = 400;
-        throw error;
+        throw createAppError(`Insufficient stock for product ${item.product.name}`);
       }
     }
 
@@ -238,9 +216,7 @@ async function confirmSalesOrder(id) {
     });
 
     if (statusUpdate.count !== 1) {
-      const error = new Error("Only draft orders can be confirmed");
-      error.statusCode = 400;
-      throw error;
+      throw createAppError("Only draft orders can be confirmed");
     }
 
     for (const item of order.items) {
@@ -259,11 +235,7 @@ async function confirmSalesOrder(id) {
       });
 
       if (productUpdate.count !== 1) {
-        const error = new Error(
-          `Insufficient stock for product ${item.product.name}`
-        );
-        error.statusCode = 400;
-        throw error;
+        throw createAppError(`Insufficient stock for product ${item.product.name}`);
       }
 
       await tx.stockMovement.create({

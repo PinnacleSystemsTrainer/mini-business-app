@@ -2,9 +2,9 @@
 
 ## Project Overview
 
-Mini Business Operations App is a training project for a small business workflow. Week 1 establishes the Express backend, React frontend, Tailwind CSS styling, and basic routing foundation.
+Mini Business Operations App is a training project for a small business workflow. It includes an Express backend, React frontend, Tailwind CSS styling, PostgreSQL persistence through Prisma, and a sales order workflow.
 
-Planned modules include product management, customer management, sales order creation, sales order line items, backend total calculation, stock validation, order confirmation, and stock movement tracking.
+Current modules include product management, customer management, sales order creation, sales order line items, backend total calculation, stock validation, order confirmation, stock reduction, and stock movement tracking.
 
 ## Tech Stack
 
@@ -13,7 +13,8 @@ Planned modules include product management, customer management, sales order cre
 - Tailwind CSS
 - Node.js
 - Express.js
-- PostgreSQL and Prisma ORM planned for Week 2
+- PostgreSQL
+- Prisma ORM
 
 ## Project Structure
 
@@ -29,23 +30,42 @@ backend/
       prisma.js
     routes/
       product.routes.js
+      customer.routes.js
+      salesOrder.routes.js
     controllers/
       product.controller.js
+      customer.controller.js
+      salesOrder.controller.js
     services/
       product.service.js
+      customer.service.js
+      salesOrder.service.js
+    utils/
+      appError.js
+      salesOrderCalculations.js
 
 frontend/
   src/
     api/
+      httpClient.js
       productApi.js
+      customerApi.js
+      salesOrderApi.js
     components/
       layout/
         AppLayout.jsx
       ui/
         Button.jsx
         Card.jsx
+        EmptyState.jsx
+        ErrorMessage.jsx
+        LoadingMessage.jsx
     pages/
+      CustomersPage.jsx
       DashboardPage.jsx
+      SalesOrderCreatePage.jsx
+      SalesOrderDetailPage.jsx
+      SalesOrdersPage.jsx
       ProductsPage.jsx
     routes/
       AppRoutes.jsx
@@ -81,6 +101,17 @@ GET /health
 GET /api/products
 GET /api/products/:id
 POST /api/products
+PATCH /api/products/:id
+DELETE /api/products/:id
+GET /api/customers
+GET /api/customers/:id
+POST /api/customers
+PATCH /api/customers/:id
+DELETE /api/customers/:id
+GET /api/sales-orders
+GET /api/sales-orders/:id
+POST /api/sales-orders
+POST /api/sales-orders/:id/confirm
 ```
 
 ## Running the Frontend
@@ -197,6 +228,17 @@ Tailwind CSS is used for layout, spacing, typography, cards, buttons, tables, an
 - Reusable Prisma client file added
 - Safe `.env.example` placeholder added
 - Prisma setup documented
+
+## Current Project Status
+
+- Product and customer master data flows are implemented.
+- Sales orders can be created with customer and line item details.
+- Backend services validate inputs and calculate line totals and order totals.
+- Draft sales orders can be confirmed.
+- Confirmation validates stock, reduces product stock, and creates stock movement records.
+- Shared frontend loading, error, empty state, and API response helpers are available.
+- Backend unit and API integration tests cover the sales order business workflow.
+- Frontend tests cover user-visible product page behavior.
 
 ## Running Tests
 

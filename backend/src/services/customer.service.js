@@ -1,10 +1,5 @@
 const prisma = require("../lib/prisma");
-
-function createError(message, statusCode = 400) {
-  const error = new Error(message);
-  error.statusCode = statusCode;
-  return error;
-}
+const { createAppError } = require("../utils/appError");
 
 function normalizeCustomerInput(data = {}) {
   return {
@@ -23,11 +18,11 @@ function normalizeCustomerInput(data = {}) {
 
 function validateCustomerData(data = {}) {
   if (!data.code || !String(data.code).trim()) {
-    throw createError("Customer code is required");
+    throw createAppError("Customer code is required");
   }
 
   if (!data.name || !String(data.name).trim()) {
-    throw createError("Customer name is required");
+    throw createAppError("Customer name is required");
   }
 }
 
@@ -51,7 +46,7 @@ async function getCustomerById(id) {
   });
 
   if (!customer) {
-    throw createError("Customer not found", 404);
+    throw createAppError("Customer not found", 404);
   }
 
   return customer;
@@ -69,7 +64,7 @@ async function createCustomer(data = {}) {
   });
 
   if (existingCustomer) {
-    throw createError("Customer code already exists");
+    throw createAppError("Customer code already exists");
   }
 
   return prisma.customer.create({
@@ -93,7 +88,7 @@ async function updateCustomer(id, data = {}) {
   });
 
   if (existingCustomer) {
-    throw createError("Customer code already exists");
+    throw createAppError("Customer code already exists");
   }
 
   return prisma.customer.update({

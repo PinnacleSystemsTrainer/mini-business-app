@@ -1,10 +1,5 @@
 const prisma = require("../lib/prisma");
-
-function createError(message, statusCode = 400) {
-  const error = new Error(message);
-  error.statusCode = statusCode;
-  return error;
-}
+const { createAppError } = require("../utils/appError");
 
 function normalizeProductInput(data = {}) {
   return {
@@ -47,13 +42,13 @@ function validateProductInput(data = {}, { partial = false } = {}) {
   }
 
   if (errors.length > 0) {
-    throw createError(errors.join(", "));
+    throw createAppError(errors.join(", "));
   }
 }
 
 function handleDuplicateSku(error) {
   if (error.code === "P2002") {
-    throw createError("SKU already exists");
+    throw createAppError("SKU already exists");
   }
 
   throw error;
@@ -104,7 +99,7 @@ async function updateProduct(id, data = {}) {
   const existingProduct = await getProductById(id);
 
   if (!existingProduct) {
-    throw createError("Product not found", 404);
+    throw createAppError("Product not found", 404);
   }
 
   const normalized = normalizeProductInput(data);
@@ -142,7 +137,7 @@ async function deleteProduct(id) {
   const existingProduct = await getProductById(id);
 
   if (!existingProduct) {
-    throw createError("Product not found", 404);
+    throw createAppError("Product not found", 404);
   }
 
   return prisma.product.update({
