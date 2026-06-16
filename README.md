@@ -307,6 +307,58 @@ Integration tests are in `backend/tests/integration/` and run as part of the sam
 
 A running PostgreSQL database and a valid `backend/.env` with `DATABASE_URL` are required.
 
+## Continuous Integration
+
+GitHub Actions runs CI for pull requests and for pushes to `main`.
+
+The CI workflow is defined in `.github/workflows/ci.yml` and includes:
+
+- Backend unit tests with `npm run test:unit`
+- Backend integration tests with `npm run test:integration`
+- A temporary PostgreSQL service container for integration tests
+- Prisma Client generation with `npx prisma generate`
+- Prisma migrations applied with `npx prisma migrate deploy`
+- Frontend tests with `npm test`
+- Frontend production build with `npm run build`
+
+Backend unit tests and integration tests run in separate jobs because they need different dependencies. Unit tests use mocked Prisma behavior and do not need PostgreSQL. Integration tests call the Express API and Prisma, so CI starts a temporary PostgreSQL database named `mini_business_app_test`.
+
+The CI test database is not the production database. It exists only while the GitHub Actions job is running. Never point CI tests at a production database.
+
+## Deployment Workflows
+
+Deployment workflow placeholders are available in:
+
+```txt
+.github/workflows/deploy-backend-hostinger.yml
+.github/workflows/deploy-frontend-hostinger.yml
+```
+
+They use `workflow_dispatch` so deployment can be triggered manually after the real deployment steps are reviewed and configured. These files intentionally do not contain real Hostinger credentials, SSH keys, database URLs, or JWT secrets.
+
+Required backend GitHub secret names:
+
+```txt
+HOSTINGER_BACKEND_HOST
+HOSTINGER_BACKEND_USER
+HOSTINGER_BACKEND_SSH_KEY
+HOSTINGER_BACKEND_PATH
+BACKEND_DATABASE_URL
+BACKEND_JWT_SECRET
+```
+
+Required frontend GitHub secret names:
+
+```txt
+HOSTINGER_FRONTEND_HOST
+HOSTINGER_FRONTEND_USER
+HOSTINGER_FRONTEND_SSH_KEY
+HOSTINGER_FRONTEND_PATH
+VITE_API_BASE_URL
+```
+
+Add real values only in GitHub repository secrets. Do not commit `.env` files or production credentials.
+
 ## Manual UI Test Scenario
 
 ### Sales order confirmation flow

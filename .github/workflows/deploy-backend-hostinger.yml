@@ -1,0 +1,22 @@
+name: Deploy Backend to Hostinger
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy-backend:
+    name: Backend deployment placeholder
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Explain required secrets
+        run: |
+          echo "Backend deployment is intentionally a placeholder."
+          echo "Configure the real deployment steps with a trainer or senior developer."
+          echo "Required GitHub secrets:"
+          echo "- HOSTINGER_BACKEND_HOST"
+          echo "- HOSTINGER_BACKEND_USER"
+          echo "- HOSTINGER_BACKEND_SSH_KEY"
+          echo "- HOSTINGER_BACKEND_PATH"
+          echo "- BACKEND_DATABASE_URL"
+          echo "- BACKEND_JWT_SECRET"
