@@ -503,6 +503,9 @@ jobs:
       run:
         working-directory: backend
 
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/mini_business_app_test?schema=public
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -516,6 +519,9 @@ jobs:
 
       - name: Install backend dependencies
         run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
 
       - name: Run backend unit tests
         run: npm run test:unit
@@ -545,6 +551,7 @@ jobs:
 
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/mini_business_app_test?schema=public
+      JWT_SECRET: ci-test-secret
 
     steps:
       - name: Checkout repository
@@ -603,6 +610,7 @@ jobs:
 - This material assumes the program uses Node.js 24 LTS.
 - If your project is fixed to a different Node LTS version, use the same version in CI.
 - If `npm ci` fails because lock files are missing, students should not randomly change commands. First confirm whether `package-lock.json` exists and is committed.
+- If `npm ci` fails with a lockfile sync error, run `npm install` locally in the same app folder and commit both `package.json` and `package-lock.json` if they changed.
 - If the project does not yet have integration tests, either add the script when integration tests are ready or keep only the unit-test job temporarily with a clear TODO. Do not pretend integration tests ran if they did not run.
 
 ---
@@ -611,7 +619,9 @@ jobs:
 
 #### `backend-unit-tests`
 
-“This job runs backend tests that do not need PostgreSQL.”
+“This job runs backend tests that do not need a running PostgreSQL service.”
+
+“The job still sets a safe dummy `DATABASE_URL` because Prisma reads the datasource URL while generating the client.”
 
 #### `backend-integration-tests`
 
@@ -671,12 +681,13 @@ Students must:
 4. Create `.github/workflows/ci.yml`.
 5. Add backend unit test job.
 6. Add backend integration test job with PostgreSQL service container if integration tests exist.
-7. Add Prisma generate and migrate steps before integration tests.
-8. Add frontend test/build job.
-9. Push branch.
-10. Open GitHub Actions tab.
-11. Inspect results.
-12. Fix failures.
+7. Add Prisma generate before backend unit and integration tests.
+8. Add Prisma migrate deploy before backend integration tests.
+9. Add frontend test/build job.
+10. Push branch.
+11. Open GitHub Actions tab.
+12. Inspect results.
+13. Fix failures.
 
 ### Success Criteria
 
@@ -684,7 +695,9 @@ By the end of the morning hands-on period:
 
 - CI workflow file exists.
 - Backend unit test job is configured.
+- Backend unit test job runs `npx prisma generate` before unit tests.
 - Backend integration test job uses PostgreSQL service container if integration tests exist.
+- Backend integration test job runs `npx prisma generate` before migrations and tests.
 - Integration job runs migrations before tests.
 - Frontend tests and build are configured.
 - No secrets are committed.
@@ -772,7 +785,19 @@ Run locally in the correct folder:
 npm install
 ```
 
-Then commit the updated lock file.
+Then commit the updated `package.json` and `package-lock.json` if either file changed.
+
+If the error says a package is missing from the lock file, for example:
+
+```text
+Missing: @emnapi/runtime@1.11.1 from lock file
+```
+
+make the dependency explicit if npm requires it, then regenerate and commit the lock:
+
+```powershell
+npm install @emnapi/runtime@1.11.1 --save-dev
+```
 
 ---
 
@@ -853,13 +878,22 @@ Explanation:
 
 “CI is a fresh machine. It may need Prisma Client generation.”
 
+“If the project uses a custom Prisma output path such as `src/generated/prisma`, tests can fail before any test runs if the generated files are missing.”
+
 Fix:
 
-Add this before migrations or tests:
+Add this before backend unit tests, migrations, or integration tests:
 
 ```yaml
 - name: Generate Prisma Client
   run: npx prisma generate
+```
+
+If Prisma config reads `DATABASE_URL`, add a safe test value to the backend job:
+
+```yaml
+env:
+  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/mini_business_app_test?schema=public
 ```
 
 ---
@@ -1097,10 +1131,13 @@ Before ending the day, verify:
 - [ ] CI runs on pushes to `main`.
 - [ ] Backend unit test job exists.
 - [ ] Backend unit test job uses `working-directory: backend`.
+- [ ] Backend unit test job sets a safe test `DATABASE_URL` if Prisma generate needs it.
+- [ ] Backend unit test job runs `npx prisma generate`.
 - [ ] Backend unit test job runs `npm run test:unit`.
 - [ ] Backend integration test job exists if integration tests exist.
 - [ ] Backend integration test job uses PostgreSQL service container.
 - [ ] Backend integration test job sets test `DATABASE_URL`.
+- [ ] Backend integration test job sets safe test-only `JWT_SECRET`.
 - [ ] Backend integration test job runs `npx prisma generate`.
 - [ ] Backend integration test job runs `npx prisma migrate deploy`.
 - [ ] Backend integration test job runs `npm run test:integration`.
