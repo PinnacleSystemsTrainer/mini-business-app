@@ -5,17 +5,40 @@ on:
 
 jobs:
   deploy-frontend:
-    name: Frontend deployment placeholder
+    name: Build and deploy frontend
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: frontend
+
+    env:
+      VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+
     steps:
-      - name: Explain required secrets
-        run: |
-          echo "Frontend deployment is intentionally a placeholder."
-          echo "Configure the real deployment steps with a trainer or senior developer."
-          echo "Required GitHub secrets:"
-          echo "- HOSTINGER_FRONTEND_HOST"
-          echo "- HOSTINGER_FRONTEND_USER"
-          echo "- HOSTINGER_FRONTEND_SSH_KEY"
-          echo "- HOSTINGER_FRONTEND_PATH"
-          echo "- VITE_API_BASE_URL"
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Deploy to Hostinger website
+        uses: easingthemes/ssh-deploy@v5.1.0
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.HOSTINGER_FRONTEND_SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.HOSTINGER_FRONTEND_HOST }}
+          REMOTE_USER: ${{ secrets.HOSTINGER_FRONTEND_USER }}
+          REMOTE_PORT: ${{ secrets.HOSTINGER_FRONTEND_PORT }}
+          SOURCE: frontend/dist/
+          TARGET: ${{ secrets.HOSTINGER_FRONTEND_PATH }}
+          ARGS: -az --delete --exclude .htaccess
