@@ -23,7 +23,12 @@ jobs:
           TARGET: ${{ secrets.HOSTINGER_BACKEND_PATH }}
           # ARGS: -az --delete --exclude node_modules --exclude .env --exclude src/generated/prisma
           SCRIPT_AFTER: |
-            set -e
+            set -eu
+
+            . ~/.nvm/nvm.sh
+            nvm install 24
+            nvm use 24
+  
             cd "${{ secrets.HOSTINGER_BACKEND_PATH }}"
             npm ci
             npx prisma generate
