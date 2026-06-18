@@ -5,18 +5,28 @@ on:
 
 jobs:
   deploy-backend:
-    name: Backend deployment placeholder
+    name: Deploy backend
     runs-on: ubuntu-latest
 
     steps:
-      - name: Explain required secrets
-        run: |
-          echo "Backend deployment is intentionally a placeholder."
-          echo "Configure the real deployment steps with a trainer or senior developer."
-          echo "Required GitHub secrets:"
-          echo "- HOSTINGER_BACKEND_HOST"
-          echo "- HOSTINGER_BACKEND_USER"
-          echo "- HOSTINGER_BACKEND_SSH_KEY"
-          echo "- HOSTINGER_BACKEND_PATH"
-          echo "- BACKEND_DATABASE_URL"
-          echo "- BACKEND_JWT_SECRET"
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy backend to Hostinger VPS
+        uses: easingthemes/ssh-deploy@v5.1.0
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.HOSTINGER_BACKEND_SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.HOSTINGER_BACKEND_HOST }}
+          REMOTE_USER: ${{ secrets.HOSTINGER_BACKEND_USER }}
+          REMOTE_PORT: ${{ secrets.HOSTINGER_BACKEND_PORT }}
+          SOURCE: backend/
+          TARGET: ${{ secrets.HOSTINGER_BACKEND_PATH }}
+          # ARGS: -az --delete --exclude node_modules --exclude .env --exclude src/generated/prisma
+          SCRIPT_AFTER: |
+            set -e
+            cd "${{ secrets.HOSTINGER_BACKEND_PATH }}"
+            npm ci
+            npx prisma generate
+            npx prisma migrate deploy
+            pm2 restart mini-business-backend || pm2 start npm --name mini-business-backend -- start
+            pm2 save
